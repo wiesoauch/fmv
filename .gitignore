@@ -1,0 +1,11 @@
+# IntelliJ project files
+.idea
+*.iml
+out
+gen
+
+# Poetry
+poetry.lock
+
+# Notes
+fmv_usage.ipynb
