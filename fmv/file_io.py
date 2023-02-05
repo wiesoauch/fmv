@@ -1,3 +1,4 @@
+import os
 import h5py
 import matplotlib
 import numpy as np
@@ -69,26 +70,32 @@ def get_kp_colors(labels):
 
 class KPVideo:
     def __init__(self, kp_file, video_file):
+        # TODO
+        #  make sure naming scheme of paths is well defined
+        self.name = os.path.split(video_file)[-1].split('.')[0]
+
         self.kp_dataframe = get_df_from_h5(kp_file)
         self.kp_labels = get_kp_labels(self.kp_dataframe)
         self.kp_colors, self.kp_colors_dict = get_kp_colors(self.kp_labels)
 
-        self.video_file = video_file
+        # TODO
+        #  self.video_file = video_file
 
     # TODO: adjust plots
-    # ability to save
-    # change fig size
-    # ...
+    #  ability to save
+    #  change fig size
+    #  title according to name/ self defined titles
+    #  self defined keypoint list
+    #  ...
 
-    def plot_likelihoods(self):  # TODO: allow to adjust plot
-        fig, ax = plt.subplots(figsize=(10, 7))
+    def plot_likelihoods(self):  # TODO: adjust plot
         grid = sns.FacetGrid(self.kp_dataframe, col="keypoint", hue="keypoint", col_wrap=5, palette=self.kp_colors)
         grid.map(plt.plot, 'frame', "likelihood")
         grid.map(plt.axhline, y=0.9, color='grey', linestyle='-')
         grid.set_titles(col_template="{col_name}")
         grid.fig.tight_layout(w_pad=3)
 
-    def plot_average_likelihoods(self):  # TODO: allow to adjust plot
+    def plot_average_likelihoods(self):  # TODO: adjust plot
         fig, ax = plt.subplots(figsize=(10, 7))
         sns.boxplot(x="keypoint", y="likelihood",
                     palette=self.kp_colors,
@@ -103,3 +110,27 @@ class KPVideo:
 
     def videos(self):  # TODO
         pass
+
+
+class KPVideos:
+    def __init__(self, kp_files, video_files):
+        self.kpvs = list()
+        for kp_file, video_file in zip(kp_files, video_files):
+            self.kpvs.append(KPVideo(kp_file, video_file))
+
+    def plot_average_likelihoods_across_files(self):
+        model_dfs = []
+        for kpv in self.kpvs:
+            # print(kpv.name)
+            df = kpv.kp_dataframe.copy()
+            df['file'] = kpv.name
+            model_dfs.append(df)
+
+        dff = pd.concat(model_dfs, axis=0)
+        g = sns.catplot(data=dff,
+                        x="file", y="likelihood", col="keypoint",
+                        col_wrap=3, sharey=False, palette='cubehelix',
+                        kind="box")  # 'boxen' works, but 'violin' doesn't?
+        g.set_titles("{col_name}")
+        # TODO find a better way to rotate x-labels
+        [plt.setp(ax.get_xticklabels(), rotation=90) for ax in g.axes.flat]

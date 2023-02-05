@@ -1,4 +1,4 @@
-from fmv.file_io import KPVideo
+from fmv.file_io import KPVideo, KPVideos
 
 
 
