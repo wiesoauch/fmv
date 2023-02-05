@@ -4,8 +4,6 @@
 out
 gen
 
-# Poetry
-poetry.lock
 
-# Notes
-fmv_usage.ipynb
+!/poetry.lock
+!/fmv_usage.ipynb
