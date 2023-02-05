@@ -4,6 +4,5 @@
 out
 gen
 
-
-!/poetry.lock
-!/fmv_usage.ipynb
+# Notes
+fmv_testing.ipynb
