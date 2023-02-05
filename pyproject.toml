@@ -12,6 +12,7 @@ h5py = "^3.8.0"
 pandas = "^1.5.3"
 jupyter = "^1.0.0"
 matplotlib = "^3.6.3"
+seaborn = "^0.12.2"
 
 
 [build-system]

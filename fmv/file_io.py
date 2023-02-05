@@ -2,6 +2,8 @@ import h5py
 import matplotlib
 import numpy as np
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 # taken from https://stackoverflow.com/questions/51548551/reading-nested-h5-group-into-numpy-array
@@ -62,16 +64,39 @@ def get_kp_colors(labels):
     for i, label in enumerate(labels):
         colors_dict[label] = colors[i]
 
-    return colors_dict
+    return colors, colors_dict
 
 
 class KPVideo:
     def __init__(self, kp_file, video_file):
         self.kp_dataframe = get_df_from_h5(kp_file)
         self.kp_labels = get_kp_labels(self.kp_dataframe)
-        self.kp_colors = get_kp_colors(self.kp_labels)
+        self.kp_colors, self.kp_colors_dict = get_kp_colors(self.kp_labels)
 
         self.video_file = video_file
+
+    # TODO: adjust plots
+    # ability to save
+    # change fig size
+    # ...
+
+    def plot_likelihoods(self):  # TODO: allow to adjust plot
+        fig, ax = plt.subplots(figsize=(10, 7))
+        grid = sns.FacetGrid(self.kp_dataframe, col="keypoint", hue="keypoint", col_wrap=5, palette=self.kp_colors)
+        grid.map(plt.plot, 'frame', "likelihood")
+        grid.map(plt.axhline, y=0.9, color='grey', linestyle='-')
+        grid.set_titles(col_template="{col_name}")
+        grid.fig.tight_layout(w_pad=3)
+
+    def plot_average_likelihoods(self):  # TODO: allow to adjust plot
+        fig, ax = plt.subplots(figsize=(10, 7))
+        sns.boxplot(x="keypoint", y="likelihood",
+                    palette=self.kp_colors,
+                    data=self.kp_dataframe)  # .set(title='')
+        plt.xticks(rotation=90)
+        ax.set(xlabel=None)
+        plt.axhline(y=0.9, color='grey', linestyle='-')
+        fig.tight_layout(w_pad=3)
 
     def frames(self):  # TODO
         pass
