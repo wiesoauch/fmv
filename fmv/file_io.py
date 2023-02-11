@@ -1,4 +1,5 @@
 import os
+import cv2
 import h5py
 import matplotlib
 import numpy as np
@@ -72,14 +73,16 @@ class KPVideo:
     def __init__(self, kp_file, video_file):
         # TODO
         #  make sure naming scheme of paths is well defined
-        self.name = os.path.split(video_file)[-1].split('.')[0]
+        #  make it possible to provide name
+        #  make sure video and pose file fit together (create warning)
+        #  or print out which files are taken together?
+        self.name = os.path.split(kp_file)[-1].split('.')[0]
 
         self.kp_dataframe = get_df_from_h5(kp_file)
         self.kp_labels = get_kp_labels(self.kp_dataframe)
         self.kp_colors, self.kp_colors_dict = get_kp_colors(self.kp_labels)
 
-        # TODO
-        #  self.video_file = video_file
+        self.video_file = video_file
 
     # TODO: adjust plots
     #  ability to save
@@ -111,10 +114,46 @@ class KPVideo:
     def videos(self):  # TODO
         pass
 
+    def frame_with_keypoints(self, frame, keypoints=None, save_path=''):
+
+        # TODO
+        #  fix cv2 import
+        #  use correct opencv version for old osx
+        #  remove and reinstall from poetry
+        # https://stackoverflow.com/questions/60254766/opencv-giving-an-error-whenever-import-cv2-is-used
+
+        if not keypoints:
+            keypoints = self.kp_labels
+
+        vidcap = cv2.VideoCapture(self.video_file)
+        vidcap.set(cv2.CAP_PROP_POS_FRAMES, frame)
+        ret, _frame = vidcap.read()
+
+        if ret:
+            _frame = cv2.cvtColor(_frame, cv2.COLOR_BGR2RGB)  # correct color between plt and cv2
+        else:
+            pass  # TODO
+
+        for keypoint in keypoints:
+            plt.imshow(_frame, cmap='binary')
+            x, y = self.kp_dataframe.query('keypoint == @keypoint and frame ==@frame')[['x', 'y']].to_numpy()[0]
+            plt.plot(x, y, marker="o", markersize=5, c=self.kp_colors_dict[keypoint])
+            plt.axis('off')
+
+        if not save_path:
+            plt.show()
+        else:
+            frame = f'{frame:010d}'  # adjust file name for correct sorting
+            plt.savefig(f'{save_path}/{frame}.png', bbox_inches='tight')
+            # plt.savefig(f'{save_path}/{frame}.png', bbox_inches='tight')
+
+            plt.close()
+
 
 class KPVideos:
     def __init__(self, kp_files, video_files):
         self.kpvs = list()
+        # TODO if only one video is provided use it for all files
         for kp_file, video_file in zip(kp_files, video_files):
             self.kpvs.append(KPVideo(kp_file, video_file))
 
@@ -130,7 +169,9 @@ class KPVideos:
         g = sns.catplot(data=dff,
                         x="file", y="likelihood", col="keypoint",
                         col_wrap=3, sharey=False, palette='cubehelix',
-                        kind="box")  # 'boxen' works, but 'violin' doesn't?
+                        kind="box", aspect=2)  # 'boxen' works, but 'violin' doesn't?
         g.set_titles("{col_name}")
-        # TODO find a better way to rotate x-labels
+        # TODO
+        #  find a better way to rotate x-labels
+        #  return g for saving?
         [plt.setp(ax.get_xticklabels(), rotation=90) for ax in g.axes.flat]
